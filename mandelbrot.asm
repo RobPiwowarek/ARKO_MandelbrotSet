@@ -1,48 +1,18 @@
 #mandelbrot set - Robert Piwowarek Wtorek 12:00
-# Swap two registers                     
-# $t9 - temp                              
-.macro	swap (%a, %b)
-	move	$t9, %a
-	move 	%a, %b
-	move	%b, $t9
-.end_macro
-
-# Print string                                                
-# $a0 - for address                       
-# $v0 - syscall number                    
-.macro	print_str(%str)
-	li	$v0, 4
-	la	$a0, %str
-	syscall
-.end_macro
-
-# Print int
-.macro	print_int(%str)
-	li	$v0, 1
-	move	$a0, %str
-	syscall
-.end_macro
-
-.macro endln
-	li $v0, 4
-	la $a0, newline
-	syscall
-.end_macro
-
 .eqv	BG_COLOR	255
 .eqv 	SHIFT		10
-.eqv    DX              64#4096      # 1/16 * 2^16
-.eqv    DY              64#4096      # 1/16 * 2^16
-.eqv    TWO           2048#131072      # 2*2^16
-.eqv    BEGX         -2560#-163840      # -2.5 * 2^16
-.eqv    BEGY         -1024#-65536       # -1 * 2^16
-.eqv    MAX_ITER        100       # max number of iterations per point
+.eqv    DX              32      # 1/32 * 2^16
+.eqv    DY              32      # 1/32 * 2^16
+.eqv    TWO           2048      # 2*2^16
+.eqv    BEGX         -2560      # -2.5 * 2^16
+.eqv    BEGY         -1024      # -1 * 2^16
+.eqv    MAX_ITER        200     # max number of iterations per point
 
 .data
 bitmap:	  .space	4
 filename: .asciiz "mandelbrot.bmp"
-width:    .word 113
-height:   .word 113
+width:    .word 233
+height:   .word 233
 size:     .word 0
 newline:  .asciiz "\n"
 
@@ -141,8 +111,8 @@ head:
 	# s3 - bitmap pointer
 	# s5 - row size
 	# s6 - column size
-	li $t0, BEGX  # -2,5 * 2^16
-	li $t1, BEGY  # -1 * 2^16
+	li $t0, BEGX 
+	li $t1, BEGY 
 	lw $s3, bitmap
 	lw $s5, width
 	lw $s6, height
@@ -163,7 +133,6 @@ calcABS:
 	sra $t3, $t3, SHIFT
 	add $t4, $t2, $t3
 cond:
-	#bge $t4, 262144, next #if bigger than 4
 	bge $t4, 4096, next
 	beq $s2, MAX_ITER, color
 nextIter:
@@ -201,7 +170,7 @@ incRow:
 	# increment bitmap pointer by 3 bytes
 	# x = baseX
 	# column iter = 0
-	addi $s0, $s0, 1 #row iter, ktora rzad w gore
+	addi $s0, $s0, 1 
 	bge  $s0, $s6, end
 	li $s1, 0	
 	addi $t1, $t1, DY
