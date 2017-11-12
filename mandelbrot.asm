@@ -41,8 +41,8 @@
 .data
 bitmap:	  .space	4
 filename: .asciiz "mandelbrot.bmp"
-width:    .word 128
-height:   .word 128
+width:    .word 113
+height:   .word 113
 size:     .word 0
 newline:  .asciiz "\n"
 
@@ -73,6 +73,7 @@ head:
 	mul $t0, $t0, 3
 	
 	and $s0, $t0, 0x3 #div mod 4
+	move $s4, $s0 #saving for later
 	add $t0, $t0, $s0 #padding
     	mul $t0, $t0 ,$t1 #height * width * 3 = size
     	sw  $t0, size
@@ -202,10 +203,25 @@ incRow:
 	# column iter = 0
 	addi $s0, $s0, 1 #row iter, ktora rzad w gore
 	bge  $s0, $s6, end
-	li $s1, 0
+	li $s1, 0	
 	addi $t1, $t1, DY
 	li $t0, BEGX
 	addi $s3, $s3, 3
+padding1:
+	bne $s4, 1, padding2
+	sb $t7, ($s3)
+	sb $t7, 1($s3)
+	sb $t7, 2($s3)
+	addi $s3, $s3, 3
+padding2:
+	bne $s4, 2, padding3
+	sb $t7, ($s3)
+	sb $t7, 1($s3)
+	addi $s3, $s3, 2
+padding3:
+	bne $s4, 3, start
+	sb $t7, ($s3)
+	addi $s3, $s3, 1
 	j start
 end:
 	#end of algorithm
