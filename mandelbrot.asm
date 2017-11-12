@@ -31,11 +31,11 @@
 
 .eqv	BG_COLOR	255
 .eqv 	SHIFT		10
-.eqv    DX              4096      # 1/16 * 2^16
-.eqv    DY              4096      # 1/16 * 2^16
-.eqv    TWO           131072      # 2*2^16
-.eqv    BEGX         -163840      # -2.5 * 2^16
-.eqv    BEGY         -65536       # -1 * 2^16
+.eqv    DX              64#4096      # 1/16 * 2^16
+.eqv    DY              64#4096      # 1/16 * 2^16
+.eqv    TWO           2048#131072      # 2*2^16
+.eqv    BEGX         -2560#-163840      # -2.5 * 2^16
+.eqv    BEGY         -1024#-65536       # -1 * 2^16
 .eqv    MAX_ITER        100       # max number of iterations per point
 
 .data
@@ -162,7 +162,8 @@ calcABS:
 	sra $t3, $t3, SHIFT
 	add $t4, $t2, $t3
 cond:
-	bge $t4, 262144, next #if bigger than 4
+	#bge $t4, 262144, next #if bigger than 4
+	bge $t4, 4096, next
 	beq $s2, MAX_ITER, color
 nextIter:
 	# calculating next element of the series
