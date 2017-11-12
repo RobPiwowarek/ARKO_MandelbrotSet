@@ -16,14 +16,35 @@
 	syscall
 .end_macro
 
+# Print int
+.macro	print_int(%str)
+	li	$v0, 1
+	move	$a0, %str
+	syscall
+.end_macro
+
+.macro endln
+	li $v0, 4
+	la $a0, newline
+	syscall
+.end_macro
+
 .eqv	BG_COLOR	255
+.eqv 	SHIFT		10
+.eqv    DX              4096      # 1/16 * 2^16
+.eqv    DY              4096      # 1/16 * 2^16
+.eqv    TWO           131072      # 2*2^16
+.eqv    BEGX         -163840      # -2.5 * 2^16
+.eqv    BEGY         -65536       # -1 * 2^16
+.eqv    MAX_ITER        100       # max number of iterations per point
 
 .data
 bitmap:	  .space	4
 filename: .asciiz "mandelbrot.bmp"
-width:    .word 13
-height:   .word 27
+width:    .word 128
+height:   .word 128
 size:     .word 0
+newline:  .asciiz "\n"
 
 head:
 #           B     M     size                    RSV   RSV   RSV   RSV   off    
@@ -111,18 +132,81 @@ head:
 	#start of algorithm
 	# t0 - re(z)
 	# t1 - im(z)
+	# t5 - saved t0
+	# t6 - saved t1
 	# s0 - row iter
 	# s1 - column iter
+	# s2 - iteration iter
+	# s3 - bitmap pointer
 	# s5 - row size
 	# s6 - column size
-	# s7 - max number of iterations
-
-		
-
-
-
-
-
+	li $t0, BEGX  # -2,5 * 2^16
+	li $t1, BEGY  # -1 * 2^16
+	lw $s3, bitmap
+	lw $s5, width
+	lw $s6, height
+	li $s1, 0
+	li $s0, 0
+start:
+	li $s2, 0
+	move $t5, $t0
+	move $t6, $t1
+calcABS:
+	# calculating absolute value of complex number
+	# t2 - re(z) * re(z)
+	# t3 - im(z) * im(z)
+	# t4 - Abs(z) = t2 + t3
+	mul $t2, $t5, $t5
+	sra $t2, $t2, SHIFT
+	mul $t3, $t6, $t6
+	sra $t3, $t3, SHIFT
+	add $t4, $t2, $t3
+cond:
+	bge $t4, 262144, next #if bigger than 4
+	beq $s2, MAX_ITER, color
+nextIter:
+	# calculating next element of the series
+	# t7 - x*x - y*y + x0
+	# s7 - 2*x*y + y0
+	sub $t7, $t2, $t3
+	add $t7, $t7, $t0
+	
+	mul $s7, $t5, $t6
+	sra $s7, $s7, SHIFT
+	sll $s7, $s7, 1
+	add $t6, $s7, $t1
+	
+	move $t5, $t7
+	
+	addi $s2, $s2, 1
+	j calcABS
+color: 	
+	# setting RGB values of pixel
+	# t7 - temp value for BG_COLOR
+	li $t7, BG_COLOR
+	sb $t7, ($s3)
+	sb $t7, 1($s3)
+	sb $t7, 2($s3)
+next:
+	addi $s1, $s1, 1
+	bge  $s1, $s5, incRow
+	addi $t0, $t0, DX
+	addi $s3, $s3, 3
+	j start
+incRow: 
+	# one row up
+	# add DY to y-coordinate
+	# increment bitmap pointer by 3 bytes
+	# x = baseX
+	# column iter = 0
+	addi $s0, $s0, 1 #row iter, ktora rzad w gore
+	bge  $s0, $s6, end
+	li $s1, 0
+	addi $t1, $t1, DY
+	li $t0, BEGX
+	addi $s3, $s3, 3
+	j start
+end:
 	#end of algorithm
 
 	# open
@@ -151,7 +235,7 @@ head:
 	la $a2, ($s0)
 	syscall
 	
-	#print number of written characters
+	# print number of written characters
 	move $a0, $v0
 	li $v0, 1
 	syscall
@@ -161,6 +245,6 @@ head:
 	move 	$a0, $t9
 	syscall
 	
-	#end it all
+	# end it all
 	li  $v0,10
     	syscall
