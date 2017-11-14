@@ -1,20 +1,17 @@
 #mandelbrot set - Robert Piwowarek Wtorek 12:00
 .eqv	BG_COLOR	255
 .eqv 	SHIFT		10
-.eqv    DX              32      # 1/32 * 2^16
-.eqv    DY              32      # 1/32 * 2^16
-.eqv    TWO           2048      # 2*2^16
-.eqv    BEGX         -2560      # -2.5 * 2^16
-.eqv    BEGY         -1024      # -1 * 2^16
+.eqv    TWO           2048      # 2*2^10
+.eqv    BEGX         -2048      # -2 * 2^10
+.eqv    BEGY         -2048      # -2 * 2^10
 .eqv    MAX_ITER        200     # max number of iterations per point
 
 .data
 bitmap:	  .space	4
 filename: .asciiz "mandelbrot.bmp"
-width:    .word 233
-height:   .word 233
+width:    .word 256
+height:   .word 256
 size:     .word 0
-newline:  .asciiz "\n"
 
 head:
 #           B     M     size                    RSV   RSV   RSV   RSV   off    
@@ -100,6 +97,17 @@ head:
  	add $s7, $s7, 4
  	sh $s0, ($s7)
 
+	#calculating DX
+	li $s0, 4096 #4*2^10
+	lw $a1, width
+	div $s0, $a1
+	mflo $a0
+	
+	#calculating DY
+	lw $a1, height
+	div $s0, $a1
+	mflo $a1
+
 	#start of algorithm
 	# t0 - re(z)
 	# t1 - im(z)
@@ -161,7 +169,7 @@ color:
 next:
 	addi $s1, $s1, 1
 	bge  $s1, $s5, incRow
-	addi $t0, $t0, DX
+	add $t0, $t0, $a0
 	addi $s3, $s3, 3
 	j start
 incRow: 
@@ -173,7 +181,7 @@ incRow:
 	addi $s0, $s0, 1 
 	bge  $s0, $s6, end
 	li $s1, 0	
-	addi $t1, $t1, DY
+	add $t1, $t1, $a1
 	li $t0, BEGX
 	addi $s3, $s3, 3
 padding1:
