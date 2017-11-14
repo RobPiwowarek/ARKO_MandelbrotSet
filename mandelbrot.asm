@@ -1,16 +1,17 @@
 #mandelbrot set - Robert Piwowarek Wtorek 12:00
 .eqv	BG_COLOR	255
-.eqv 	SHIFT		10
-.eqv    TWO           2048      # 2*2^10
-.eqv    BEGX         -2048      # -2 * 2^10
-.eqv    BEGY         -2048      # -2 * 2^10
+.eqv 	SHIFT		20
+.eqv    TWO           2097152      # 2*2^20
+.eqv    BEGX         -2097152      # -2 * 2^20
+.eqv    BEGY         -2097152      # -2 * 2^20
 .eqv    MAX_ITER        200     # max number of iterations per point
+.eqv 	FOUR 	      4194304	   # 4 * 2^20
 
 .data
 bitmap:	  .space	4
 filename: .asciiz "mandelbrot.bmp"
-width:    .word 256
-height:   .word 256
+width:    .word 512
+height:   .word 512
 size:     .word 0
 
 head:
@@ -98,7 +99,7 @@ head:
  	sh $s0, ($s7)
 
 	#calculating DX
-	li $s0, 4096 #4*2^10
+	li $s0, FOUR
 	lw $a1, width
 	div $s0, $a1
 	mflo $a0
@@ -136,12 +137,15 @@ calcABS:
 	# t3 - im(z) * im(z)
 	# t4 - Abs(z) = t2 + t3
 	mul $t2, $t5, $t5
-	sra $t2, $t2, SHIFT
+	mfhi $t2
+	sll $t2, $t2, 12
+
 	mul $t3, $t6, $t6
-	sra $t3, $t3, SHIFT
+	mfhi $t3
+	sll $t3, $t3, 12
 	add $t4, $t2, $t3
 cond:
-	bge $t4, 4096, next
+	bge $t4, FOUR, next
 	beq $s2, MAX_ITER, color
 nextIter:
 	# calculating next element of the series
@@ -151,7 +155,8 @@ nextIter:
 	add $t7, $t7, $t0
 	
 	mul $s7, $t5, $t6
-	sra $s7, $s7, SHIFT
+	mfhi $s7
+	sll $s7, $s7, 12
 	sll $s7, $s7, 1
 	add $t6, $s7, $t1
 	
